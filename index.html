@@ -42,9 +42,11 @@
     :focus-visible { outline: 2px solid #21634f; outline-offset: 3px; }
     .range-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
     tbody tr.range-start td { background: #e5ebe7; }
-    .table-tools { margin-top: 12px; }
+    .table-tools { display: flex; align-items: center; gap: 6px; margin-top: 12px; }
     .gap-control { display: flex; align-items: center; gap: 6px; color: #595959; }
     #column-gap { width: 3.25rem; padding: 4px; border: 1px solid #b9c9c1; border-radius: 4px; color: inherit; font: inherit; }
+    .gap-buttons { display: flex; gap: 4px; }
+    .gap-buttons button { width: 1.75rem; height: 1.75rem; padding: 0; color: #595959; font-size: 1rem; line-height: 1; }
     table { --column-gap: 50px; max-width: 100%; border-collapse: collapse; text-align: left; }
     th, td { border-bottom: 1px solid #e5ebe7; padding: 10px 0; }
     tbody tr:nth-child(9) td { border-bottom-color: #aebfb6; }
@@ -82,7 +84,7 @@
       </div>
     </header>
     <div class="range-controls">
-      <button type="button" id="range-mode" aria-pressed="false">范围选择</button>
+      <button type="button" id="range-mode" aria-pressed="false">连选</button>
       <span class="caption" id="range-hint" aria-live="polite">按住 Shift 连选</span>
     </div>
     <table aria-label="视频时长表" id="video-table">
@@ -116,11 +118,15 @@
         <tr><td>19</td><td><label><input type="checkbox" checked> <span>电力电子器件应用中的问题</span></label></td><td>14:38</td></tr>
       </tbody>
       <tfoot>
-        <tr><th scope="row" colspan="2">全部视频合计</th><td class="total-duration">4:09:09</td><td></td></tr>
+        <tr><th scope="row" colspan="2">合计</th><td class="total-duration">4:09:09</td><td></td></tr>
       </tfoot>
     </table>
     <footer class="table-tools">
       <label class="gap-control caption">列间距 <input id="column-gap" type="number" value="50" min="0" max="200" step="25"> px</label>
+      <div class="gap-buttons">
+        <button type="button" id="decrease-gap" aria-label="减小列间距">−</button>
+        <button type="button" id="increase-gap" aria-label="增大列间距">+</button>
+      </div>
     </footer>
   </main>
   <script>
@@ -179,7 +185,7 @@
       rangeStart = null;
       rangeMode = active;
       rangeButton.setAttribute('aria-pressed', String(active));
-      rangeHint.textContent = active ? '点选范围的第一节课' : '按住 Shift 连选';
+      rangeHint.textContent = active ? '选择范围的第一节课' : '按住 Shift 连选';
     }
 
     rangeButton.addEventListener('click', () => setRangeMode(!rangeMode));
@@ -227,15 +233,25 @@
     });
 
     const gapInput = document.getElementById('column-gap');
-    gapInput.addEventListener('input', () => {
+    function updateColumnGap() {
       if (gapInput.value !== '' && gapInput.validity.valid) {
         table.style.setProperty('--column-gap', gapInput.valueAsNumber + 'px');
       }
-    });
+    }
+
+    gapInput.addEventListener('input', updateColumnGap);
     gapInput.addEventListener('change', () => {
       if (gapInput.value === '' || !gapInput.validity.valid) {
         gapInput.value = parseFloat(table.style.getPropertyValue('--column-gap') || gapInput.defaultValue);
       }
+    });
+    document.getElementById('decrease-gap').addEventListener('click', () => {
+      gapInput.stepDown();
+      updateColumnGap();
+    });
+    document.getElementById('increase-gap').addEventListener('click', () => {
+      gapInput.stepUp();
+      updateColumnGap();
     });
 
     const toggleBars = document.getElementById('toggle-bars');
