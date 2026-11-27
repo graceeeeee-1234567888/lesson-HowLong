@@ -38,15 +38,30 @@
       cursor: pointer;
     }
     button:hover, tr:hover td { background: #f1f6f3; }
+    button[aria-pressed="true"] { background: #e5ebe7; border-color: #43816d; }
     :focus-visible { outline: 2px solid #21634f; outline-offset: 3px; }
-    table { width: 100%; border-collapse: collapse; text-align: left; }
+    .range-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+    tbody tr.range-start td { background: #e5ebe7; }
+    .table-tools { margin-top: 12px; }
+    .gap-control { display: flex; align-items: center; gap: 6px; color: #595959; }
+    #column-gap { width: 3.25rem; padding: 4px; border: 1px solid #b9c9c1; border-radius: 4px; color: inherit; font: inherit; }
+    table { --column-gap: 50px; max-width: 100%; border-collapse: collapse; text-align: left; }
     th, td { border-bottom: 1px solid #e5ebe7; padding: 10px 0; }
-    th:first-child, td:first-child { padding-right: 10px; }
-    th:last-child, td:last-child { padding-left: 10px; text-align: right; font-variant-numeric: tabular-nums; }
+    tbody tr:nth-child(9) td { border-bottom-color: #aebfb6; }
+    thead th:first-child, tbody td:first-child { padding-right: 10px; white-space: nowrap; }
+    thead th:nth-child(3), tbody td:nth-child(3), .total-duration { padding-left: var(--column-gap); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
     tbody td:nth-child(2) { padding: 0; }
-    label { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 0; cursor: pointer; }
-    input { flex: none; width: 1rem; height: 1rem; margin: 0; cursor: pointer; }
+    tbody label { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 0; cursor: pointer; user-select: none; }
+    input[type="checkbox"] { flex: none; width: 1rem; height: 1rem; margin: 0; cursor: pointer; }
+    .bar-column { padding-left: 8px; text-align: left; }
+    .bar-column button { padding: 4px 6px; white-space: nowrap; }
+    .duration-bar { display: block; height: 6px; border-radius: 4px; background: #e5ebe7; }
+    table:not(.show-bars) .duration-bar { display: none; }
+    .duration-bar > span { display: block; height: 100%; border-radius: inherit; background: #43816d; }
     tfoot { font-weight: 600; }
+    @media (max-width: 540px) {
+      thead th:nth-child(3), tbody td:nth-child(3), .total-duration { padding-left: min(var(--column-gap), 18vw); }
+    }
     @media (max-width: 420px) { body { padding-inline: 12px; } header { padding-top: 14px; } }
   </style>
 </head>
@@ -57,8 +72,8 @@
       <div class="summary">
         <output>
           <span class="caption">已选 <span id="count">19 / 19</span> 项</span>
-          <span id="duration">4 小时 09 分 09 秒</span>
-          <span class="caption">未选时长 <span id="remaining">0 小时 00 分 00 秒</span></span>
+          <span id="duration">4 小时 09min</span>
+          <span class="caption">未选 <span id="remaining">0 小时 00min</span></span>
         </output>
         <div class="actions">
           <button type="button" id="select-all">全选</button>
@@ -66,9 +81,18 @@
         </div>
       </div>
     </header>
-    <table aria-label="视频时长表">
+    <div class="range-controls">
+      <button type="button" id="range-mode" aria-pressed="false">范围选择</button>
+      <span class="caption" id="range-hint" aria-live="polite">按住 Shift 连选</span>
+    </div>
+    <table aria-label="视频时长表" id="video-table">
       <thead>
-        <tr><th scope="col">序号</th><th scope="col">视频</th><th scope="col">时长</th></tr>
+        <tr>
+          <th scope="col">序号</th>
+          <th scope="col">视频</th>
+          <th scope="col">时长</th>
+          <th scope="col" class="bar-column"><button type="button" id="toggle-bars" aria-pressed="false">进度条</button></th>
+        </tr>
       </thead>
       <tbody>
         <tr><td>1</td><td><label><input type="checkbox" checked> <span>电力电子器件（1）</span></label></td><td>20:27</td></tr>
@@ -92,25 +116,34 @@
         <tr><td>19</td><td><label><input type="checkbox" checked> <span>电力电子器件应用中的问题</span></label></td><td>14:38</td></tr>
       </tbody>
       <tfoot>
-        <tr><th scope="row" colspan="2">全部视频合计</th><td>4:09:09</td></tr>
+        <tr><th scope="row" colspan="2">全部视频合计</th><td class="total-duration">4:09:09</td><td></td></tr>
       </tfoot>
     </table>
+    <footer class="table-tools">
+      <label class="gap-control caption">列间距 <input id="column-gap" type="number" value="50" min="0" max="200" step="25"> px</label>
+    </footer>
   </main>
   <script>
+    const table = document.getElementById('video-table');
     const videos = Array.from(document.querySelectorAll('tbody tr'), (row) => {
-      const [minutes, seconds] = row.cells[2].textContent.split(':').map(Number);
-      return { checkbox: row.querySelector('input'), seconds: minutes * 60 + seconds };
+      const timeCell = row.cells[2];
+      const [minutes, seconds] = timeCell.textContent.split(':').map(Number);
+      return { row, checkbox: row.querySelector('input'), label: row.querySelector('label'), seconds: minutes * 60 + seconds };
     });
     const count = document.getElementById('count');
     const duration = document.getElementById('duration');
     const remaining = document.getElementById('remaining');
+    const rangeButton = document.getElementById('range-mode');
+    const rangeHint = document.getElementById('range-hint');
     const allSeconds = videos.reduce((sum, video) => sum + video.seconds, 0);
+    let selectionAnchor = null;
+    let rangeMode = false;
+    let rangeStart = null;
 
     function formatDuration(total) {
       const hours = Math.floor(total / 3600);
       const minutes = String(Math.floor(total / 60) % 60).padStart(2, '0');
-      const seconds = String(total % 60).padStart(2, '0');
-      return hours + ' 小时 ' + minutes + ' 分 ' + seconds + ' 秒';
+      return hours + ' 小时 ' + minutes + 'min';
     }
 
     function updateSummary() {
@@ -125,10 +158,92 @@
       for (const { checkbox } of videos) {
         checkbox.checked = checked;
       }
+      selectionAnchor = null;
+      setRangeMode(false);
       updateSummary();
     }
 
-    document.querySelector('tbody').addEventListener('change', updateSummary);
+    function setRange(start, end, checked) {
+      const first = Math.min(start, end);
+      const last = Math.max(start, end);
+      for (const { checkbox } of videos.slice(first, last + 1)) {
+        checkbox.checked = checked;
+      }
+      updateSummary();
+    }
+
+    function setRangeMode(active) {
+      if (rangeStart) {
+        videos[rangeStart.index].row.classList.remove('range-start');
+      }
+      rangeStart = null;
+      rangeMode = active;
+      rangeButton.setAttribute('aria-pressed', String(active));
+      rangeHint.textContent = active ? '点选范围的第一节课' : '按住 Shift 连选';
+    }
+
+    rangeButton.addEventListener('click', () => setRangeMode(!rangeMode));
+
+    const longest = Math.max(...videos.map(({ seconds }) => seconds));
+    videos.forEach(({ row, label, checkbox, seconds }, index) => {
+      checkbox.addEventListener('click', (event) => {
+        if (rangeMode) {
+          if (rangeStart === null) {
+            event.preventDefault();
+            rangeStart = { index, checked: checkbox.checked };
+            row.classList.add('range-start');
+            rangeHint.textContent = rangeStart.checked ? '点选另一端，勾选整段' : '点选另一端，取消勾选整段';
+          } else {
+            setRange(rangeStart.index, index, rangeStart.checked);
+            selectionAnchor = index;
+            setRangeMode(false);
+          }
+          return;
+        }
+
+        if (event.shiftKey && selectionAnchor !== null) {
+          setRange(selectionAnchor, index, checkbox.checked);
+        } else {
+          selectionAnchor = index;
+          updateSummary();
+        }
+      });
+      label.addEventListener('click', (event) => {
+        if (!rangeMode && event.target !== checkbox && event.shiftKey && selectionAnchor !== null) {
+          event.preventDefault();
+          setRange(selectionAnchor, index, !checkbox.checked);
+        }
+      });
+
+      const fill = document.createElement('span');
+      fill.style.width = (seconds / longest * 100) + '%';
+      const bar = document.createElement('span');
+      bar.className = 'duration-bar';
+      bar.setAttribute('aria-hidden', 'true');
+      bar.append(fill);
+      const barCell = row.insertCell();
+      barCell.className = 'bar-column';
+      barCell.append(bar);
+    });
+
+    const gapInput = document.getElementById('column-gap');
+    gapInput.addEventListener('input', () => {
+      if (gapInput.value !== '' && gapInput.validity.valid) {
+        table.style.setProperty('--column-gap', gapInput.valueAsNumber + 'px');
+      }
+    });
+    gapInput.addEventListener('change', () => {
+      if (gapInput.value === '' || !gapInput.validity.valid) {
+        gapInput.value = parseFloat(table.style.getPropertyValue('--column-gap') || gapInput.defaultValue);
+      }
+    });
+
+    const toggleBars = document.getElementById('toggle-bars');
+    toggleBars.addEventListener('click', () => {
+      const shown = table.classList.toggle('show-bars');
+      toggleBars.setAttribute('aria-pressed', String(shown));
+    });
+
     document.getElementById('select-all').addEventListener('click', () => setAll(true));
     document.getElementById('clear-all').addEventListener('click', () => setAll(false));
     updateSummary();
