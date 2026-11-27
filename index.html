@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>网课时长</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color: #172520;
+      background: #fff;
+      font-family: system-ui, "Microsoft YaHei", sans-serif;
+      accent-color: #21634f;
+    }
+    body { margin: 0; padding: 0 20px 36px; }
+    main { max-width: 640px; margin: 0 auto; }
+    header {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border-bottom: 1px solid #dce5e0;
+      padding: 24px 0 14px;
+    }
+    h1 { margin: 0 0 14px; font-size: clamp(1.4rem, 5vw, 2rem); }
+    .summary { display: flex; gap: 12px 24px; flex-wrap: wrap; align-items: end; justify-content: space-between; }
+    output { display: grid; gap: 4px; }
+    .caption, th, td:first-child { color: #4c6057; font-size: .875rem; }
+    #duration { font-size: 1.45rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .actions { display: flex; gap: 8px; }
+    button {
+      border: 1px solid #b9c9c1;
+      border-radius: 6px;
+      padding: 8px 12px;
+      background: #fff;
+      color: inherit;
+      font: inherit;
+      font-size: .875rem;
+      cursor: pointer;
+    }
+    button:hover, tr:hover td { background: #f1f6f3; }
+    :focus-visible { outline: 2px solid #21634f; outline-offset: 3px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { border-bottom: 1px solid #e5ebe7; padding: 10px 0; }
+    th:first-child, td:first-child { padding-right: 10px; }
+    th:last-child, td:last-child { padding-left: 10px; text-align: right; font-variant-numeric: tabular-nums; }
+    tbody td:nth-child(2) { padding: 0; }
+    label { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 0; cursor: pointer; }
+    input { flex: none; width: 1rem; height: 1rem; margin: 0; cursor: pointer; }
+    tfoot { font-weight: 600; }
+    @media (max-width: 420px) { body { padding-inline: 12px; } header { padding-top: 14px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>网课时长</h1>
+      <div class="summary">
+        <output>
+          <span class="caption">已选 <span id="count">19 / 19</span> 项</span>
+          <span id="duration">4 小时 09 分 09 秒</span>
+          <span class="caption">未选时长 <span id="remaining">0 小时 00 分 00 秒</span></span>
+        </output>
+        <div class="actions">
+          <button type="button" id="select-all">全选</button>
+          <button type="button" id="clear-all">清空</button>
+        </div>
+      </div>
+    </header>
+    <table aria-label="视频时长表">
+      <thead>
+        <tr><th scope="col">序号</th><th scope="col">视频</th><th scope="col">时长</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td><label><input type="checkbox" checked> <span>电力电子器件（1）</span></label></td><td>20:27</td></tr>
+        <tr><td>2</td><td><label><input type="checkbox" checked> <span>电力电子器件（2）</span></label></td><td>13:52</td></tr>
+        <tr><td>3</td><td><label><input type="checkbox" checked> <span>电力电子器件（3）</span></label></td><td>11:02</td></tr>
+        <tr><td>4</td><td><label><input type="checkbox" checked> <span>整流电路（1）</span></label></td><td>19:27</td></tr>
+        <tr><td>5</td><td><label><input type="checkbox" checked> <span>整流电路（2）</span></label></td><td>15:54</td></tr>
+        <tr><td>6</td><td><label><input type="checkbox" checked> <span>整流电路（3）</span></label></td><td>05:06</td></tr>
+        <tr><td>7</td><td><label><input type="checkbox" checked> <span>整流电路（4）</span></label></td><td>14:09</td></tr>
+        <tr><td>8</td><td><label><input type="checkbox" checked> <span>逆变电路（1）</span></label></td><td>13:10</td></tr>
+        <tr><td>9</td><td><label><input type="checkbox" checked> <span>逆变电路（2）</span></label></td><td>04:40</td></tr>
+        <tr><td>10</td><td><label><input type="checkbox" checked> <span>直流斩波电路（1）</span></label></td><td>15:08</td></tr>
+        <tr><td>11</td><td><label><input type="checkbox" checked> <span>直流斩波电路（2）</span></label></td><td>13:17</td></tr>
+        <tr><td>12</td><td><label><input type="checkbox" checked> <span>直流斩波电路（3）</span></label></td><td>24:38</td></tr>
+        <tr><td>13</td><td><label><input type="checkbox" checked> <span>直流斩波电路（4）</span></label></td><td>04:27</td></tr>
+        <tr><td>14</td><td><label><input type="checkbox" checked> <span>交流电力控制电路（1）</span></label></td><td>13:02</td></tr>
+        <tr><td>15</td><td><label><input type="checkbox" checked> <span>交流电力控制电路（2）</span></label></td><td>13:00</td></tr>
+        <tr><td>16</td><td><label><input type="checkbox" checked> <span>脉冲调制技术（1）</span></label></td><td>09:42</td></tr>
+        <tr><td>17</td><td><label><input type="checkbox" checked> <span>脉冲调制技术（2）</span></label></td><td>09:58</td></tr>
+        <tr><td>18</td><td><label><input type="checkbox" checked> <span>脉冲调制技术（3）</span></label></td><td>13:32</td></tr>
+        <tr><td>19</td><td><label><input type="checkbox" checked> <span>电力电子器件应用中的问题</span></label></td><td>14:38</td></tr>
+      </tbody>
+      <tfoot>
+        <tr><th scope="row" colspan="2">全部视频合计</th><td>4:09:09</td></tr>
+      </tfoot>
+    </table>
+  </main>
+  <script>
+    const videos = Array.from(document.querySelectorAll('tbody tr'), (row) => {
+      const [minutes, seconds] = row.cells[2].textContent.split(':').map(Number);
+      return { checkbox: row.querySelector('input'), seconds: minutes * 60 + seconds };
+    });
+    const count = document.getElementById('count');
+    const duration = document.getElementById('duration');
+    const remaining = document.getElementById('remaining');
+    const allSeconds = videos.reduce((sum, video) => sum + video.seconds, 0);
+
+    function formatDuration(total) {
+      const hours = Math.floor(total / 3600);
+      const minutes = String(Math.floor(total / 60) % 60).padStart(2, '0');
+      const seconds = String(total % 60).padStart(2, '0');
+      return hours + ' 小时 ' + minutes + ' 分 ' + seconds + ' 秒';
+    }
+
+    function updateSummary() {
+      const selected = videos.filter(({ checkbox }) => checkbox.checked);
+      const total = selected.reduce((sum, video) => sum + video.seconds, 0);
+      count.textContent = selected.length + ' / ' + videos.length;
+      duration.textContent = formatDuration(total);
+      remaining.textContent = formatDuration(allSeconds - total);
+    }
+
+    function setAll(checked) {
+      for (const { checkbox } of videos) {
+        checkbox.checked = checked;
+      }
+      updateSummary();
+    }
+
+    document.querySelector('tbody').addEventListener('change', updateSummary);
+    document.getElementById('select-all').addEventListener('click', () => setAll(true));
+    document.getElementById('clear-all').addEventListener('click', () => setAll(false));
+    updateSummary();
+  </script>
+</body>
+</html>
